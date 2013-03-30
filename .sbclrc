@@ -1,0 +1,13 @@
+
+;;; The following lines added by ql:add-to-init-file:
+#-quicklisp
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
+                                       (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+;;; load all the required modules using quicklisp
+(defvar *modules-load-startup*
+  '(trivial-shell xzlib))
+(dolist (module *modules-load-startup*)
+  (ql:quickload module))
