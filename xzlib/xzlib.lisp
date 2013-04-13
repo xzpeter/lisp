@@ -12,6 +12,5 @@
   (cond ((null start-p) nil)
 		((null end-p) (range 0 start))
 		((= step 0) (error "step cannot be zero"))
-		((> (+ start step) end) nil)
-		(t (cons start (range (+ start step) end step)))))
-
+		(t (loop for i from start below end by step
+			  collect i))))

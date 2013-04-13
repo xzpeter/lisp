@@ -1,27 +1,12 @@
 (in-package :xzlib)
 
-(defun multiple-p (v n)
-  "whether v is the multiple of n?"
-  (= (mod v n) 0))
-
-(defun prime (n)
-  "return the prime factors of number n"
-  (cond
-	((not (integerp n)) (error "~a not integer!" n))
-	((= n 1) nil)
-	((= n 2) '(2))
-	((= n 3) '(3))
-	(t
-	 (loop for i from (floor (sqrt n)) downto 2
-		finally (return (list n)) 
-		do
-		  (when (= 0 (mod n i))
-			(return (append (prime i) (prime (/ n i)))))))))
-
 
 ;; If we list all the natural numbers below 10 that are multiples of 3 or
 ;; 5, we get 3, 5, 6 and 9. The sum of these multiples is 23.  Find the
 ;; sum of all the multiples of 3 or 5 below 1000.
+(defun multiple-p (v n)
+  "whether v is the multiple of n?"
+  (= (mod v n) 0))
 (defun p1 (n)
   "when n=10 should be 23, we need n=1000 result"
   (loop for i from 1 below n
@@ -45,4 +30,79 @@
 
 ;; The prime factors of 13195 are 5, 7, 13 and 29.
 ;; What is the largest prime factor of the number 600851475143 ?
-(defun p3 ())
+(defun prime-factors (n)
+  "return the prime factors of number n"
+  (cond
+	((not (integerp n)) (error "~a not integer!" n))
+	((= n 1) nil)
+	((= n 2) '(2))
+	((= n 3) '(3))
+	(t
+	 (loop for i from (floor (sqrt n)) downto 2
+		finally (return (list n)) 
+		do
+		  (when (= 0 (mod n i))
+			(return (append (prime-factors i) (prime-factors (/ n i)))))))))
+(defun is-prime (n)
+  "return t if n is prime, or nil"
+  (<= (length (prime-factors n)) 1))
+(defun p3 (n)
+  (apply #'max (prime-factors n)))
+
+;; A palindromic number reads the same both ways. The largest palindrome made from the product of two 2-digit numbers is 9009 = 91 99.
+;; Find the largest palindrome made from the product of two 3-digit numbers.
+(defun mirror-number (x)
+  (let* ((str (format nil "~a" x))
+		 (len (length str))
+		 (n (floor (/ len 2)))
+		 (is t))
+	(loop for i from 0 below n 
+		 do (let ((a (aref str i))
+				  (b (aref str (- len i 1))))
+			  (when (not (eq a b))
+				(setf is nil)
+				(return))))
+	is))
+(defun p4 (start end)
+  (let ((result nil))
+	(loop for i from start below end
+	  do (loop for j from i below end
+			do (let ((n (* i j)))
+				 (when (mirror-number n)
+				  (setf result (cons n result))))))
+	(apply #'max result)))
+
+;; By listing the first six prime numbers: 2, 3, 5, 7, 11, and 13, we can see that the 6th prime is 13.
+;; What is the 10 001st prime number?
+(defmacro loop-prime-numbers (var limit &body body)
+  "loop over prime numbers which are smaller than limit"
+  (let ((limit-name (gensym))
+		(primes (gensym))
+		(is-prime (gensym)))
+	`(let ((,primes nil)
+		   (,limit-name ,limit))
+	   (flet ((,is-prime (x)
+				(dolist (v ,primes t)
+				  (when (= (mod x v) 0)
+					(return nil)))) ) 
+		 (loop for ,var from 2 below ,limit-name
+			do (when (or (= ,var 2)
+						 (and (not (= (mod ,var 2) 0))
+							  (,is-prime ,var)))
+				 (setf ,primes (cons ,var ,primes))
+				 ,@body))))))
+(defun p7 (n)
+  (let ((count 0))
+	(loop-prime-numbers x (* n 100)
+		 (incf count)
+		 (when (= count n)
+		   (return-from p7 x)))))
+
+;; The sum of the primes below 10 is 2 + 3 + 5 + 7 = 17.
+;; Find the sum of all the primes below two million.
+(defun p10 (n)
+  "result should be p10(2 000 000)"
+  (let ((total 0))
+	(loop-prime-numbers x n
+	  (incf total x))
+	total))
