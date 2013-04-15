@@ -1,4 +1,4 @@
 (defpackage :xzlib
   (:use :cl)
-  (:export #:strcat
-		   #:range))
+  (:export :strcat
+		   :range))

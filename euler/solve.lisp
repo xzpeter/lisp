@@ -1,5 +1,5 @@
+(ql:quickload "xzlib")
 (in-package :xzlib)
-
 
 ;; If we list all the natural numbers below 10 that are multiples of 3 or
 ;; 5, we get 3, 5, 6 and 9. The sum of these multiples is 23.  Find the
@@ -74,23 +74,6 @@
 
 ;; By listing the first six prime numbers: 2, 3, 5, 7, 11, and 13, we can see that the 6th prime is 13.
 ;; What is the 10 001st prime number?
-(defmacro loop-prime-numbers (var limit &body body)
-  "loop over prime numbers which are smaller than limit"
-  (let ((limit-name (gensym))
-		(primes (gensym))
-		(is-prime (gensym)))
-	`(let ((,primes nil)
-		   (,limit-name ,limit))
-	   (flet ((,is-prime (x)
-				(dolist (v ,primes t)
-				  (when (= (mod x v) 0)
-					(return nil)))) ) 
-		 (loop for ,var from 2 below ,limit-name
-			do (when (or (= ,var 2)
-						 (and (not (= (mod ,var 2) 0))
-							  (,is-prime ,var)))
-				 (setf ,primes (cons ,var ,primes))
-				 ,@body))))))
 (defun p7 (n)
   (let ((count 0))
 	(loop-prime-numbers x (* n 100)
@@ -227,3 +210,48 @@
 		  (setf val (floor (/ val 10)))
 		  (when (= val 0)
 			(return sum)))))
+
+
+;; You are given the following information, but you may prefer to do some research for yourself.
+;; 1 Jan 1900 was a Monday.
+;; Thirty days has September,
+;; April, June and November.
+;; All the rest have thirty-one,
+;; Saving February alone,
+;; Which has twenty-eight, rain or shine.
+;; And on leap years, twenty-nine.
+;; A leap year occurs on any year evenly divisible by 4, but not on a century unless it is divisible by 400.
+;; How many Sundays fell on the first of the month during the twentieth century (1 Jan 1901 to 31 Dec 2000)?
+(defun count-first-sunday-cases ()
+  "weekday from 0-6, month from 0-11, count number of months that start
+with a Sunday from year 1900, before end-year comes"
+  ;; weekday is Monday at 1st Jan. 1900
+  (let ((weekday 0)
+		(count 0))
+	(loop for year from 1900 below 2001 do
+		 (loop for month from 0 upto 11 do
+			  (when (and (>= year 1901) (<= year 2000) (= weekday 6))
+				(incf count))
+			  (setf weekday (mod (+ weekday (days-in-month year month)) 7))))
+	count))
+;;; not right, should be 171
+(defun p19 ()
+  (- (count-first-sunday-cases 2001)
+	 2))
+
+;; Using names.txt (right click and 'Save Link/Target As...'), a 46K text file containing over five-thousand first names, begin by sorting it into alphabetical order. Then working out the alphabetical value for each name, multiply this value by its alphabetical position in the list to obtain a name score.
+;; For example, when the list is sorted into alphabetical order, COLIN, which is worth 3 + 15 + 12 + 9 + 14 = 53, is the 938th name in the list. So, COLIN would obtain a score of 938  53 = 49714.
+;; What is the total of all the name scores in the file?
+(defun p22 ()
+  (let ((data
+		 (mapcar #'(lambda (name) (subseq name 1 (- (length name) 1)))
+			   (split (with-open-file (s "~/tmp/names.txt")
+						(read-line s)) ",")))) 
+	(setf data (sort data #'string-lessp))
+	(loop for i from 0 below (length data)
+		 sum (let ((word (nth i data)))
+			   (* (+ 1 i)
+				  (apply #'+
+						 (mapcar #'(lambda (c)
+									 (- (char-code c) (char-code #\A) -1))
+								 (split (string-upcase word) ""))))))))
