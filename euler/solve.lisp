@@ -255,3 +255,104 @@ with a Sunday from year 1900, before end-year comes"
 						 (mapcar #'(lambda (c)
 									 (- (char-code c) (char-code #\A) -1))
 								 (split (string-upcase word) ""))))))))
+
+;; The Fibonacci sequence is defined by the recurrence relation:
+
+;; Fn = Fn1 + Fn2, where F1 = 1 and F2 = 1.
+;; Hence the first 12 terms will be:
+
+;; F1 = 1
+;; F2 = 1
+;; F3 = 2
+;; F4 = 3
+;; F5 = 5
+;; F6 = 8
+;; F7 = 13
+;; F8 = 21
+;; F9 = 34
+;; F10 = 55
+;; F11 = 89
+;; F12 = 144
+;; The 12th term, F12, is the first term to contain three digits.
+
+;; What is the first term in the Fibonacci sequence to contain 1000 digits?
+(defun p25 (n)
+  (let ((cnt 0))
+	(loop-fibonacci-numbers x
+		 (incf cnt)
+		 (let ((str (format nil "~a" x)))
+		   (when (= (length str) n)
+			 (return cnt))))))
+
+(defun p29 (n)
+  (let ((arr (make-hash-table)))
+   (loop for i from 2 upto n do
+		(loop for j from 2 upto n do
+			 (let ((v (expt i j)))
+			  (when (not (gethash v arr))
+				(setf (gethash v arr) 1)))))
+   arr))
+
+(defun p33 ()
+  (let ((result nil))
+	(loop for b1 from 1 upto 9 do
+		 (loop for a1 from 1 upto b1 do
+			  (loop for b2 from 1 upto 9 do
+				   (loop for a2 from 1 upto 9 do
+						(let ((v0 (/ (+ (* a1 10) a2) (+ (* b1 10) b2)))
+							  (v1 (/ a1 b2))
+							  (v2 (/ a2 b1)))
+						  (when (and (< v0 1)
+									 (not (= a1 a2))
+									 (or (and (= v0 v1) (= a2 b1))
+										 (and (= v0 v2) (= a1 b2))))
+							(format t "~a~a/~a~a~%" a1 a2 b1 b2)
+							(push v0 result)))))))
+	(denominator (apply #'* result))))
+
+(defun truncate-prime (x lst)
+  (if (not (in x lst))
+	  nil
+	  (let ((max (length (format nil "~a" x))))
+		(loop for power from 1 below max with result = t
+			 finally (return result)
+			 do (let ((divider (expt 10 power)))
+				  (dolist (var (list (floor (/ x divider))
+									 (mod x divider)))
+					(when (not (in var lst))
+					  (setf result nil)
+					  (return))))))))
+;;; very slow on the last number.
+;;; 23, 37, 53, 73, 313, 317, 373, 797, 3137, 3797, 739397
+(defun p37 (n limit)
+  (let ((primes nil)
+		(count 0))
+	(loop-prime-numbers x
+		 (push x primes)
+		 (when (truncate-prime x primes)
+		   (format t "~a:~a~%" (incf count) x)
+		   (when (or (>= count n)
+					 (>= x limit))
+			 (return))))))
+
+(defvar *p42-words* nil
+  "should load the file into this, to make it list of words. ")
+(defvar *triangle-numbers* nil)
+(defun calc-word-value (word)
+  (apply #'+ (mapcar #'(lambda (c) (+ (char-code c)
+							(- (char-code #\A)) 1))
+		   (split (string-upcase word)))))
+(defun prepare-triangle-numbers ()
+  (setf *triangle-numbers* nil)				;do cleaning
+  (let ((limit (* 26 (apply #'max (mapcar #'(lambda (x) (length x)) *p42-words*))))) 
+	(loop for i from 1 do
+		 (let ((x (floor (* i (+ i 1) 0.5))))
+		   (if (> x limit)
+			   (return)
+			   (push x *triangle-numbers*))))))
+(defun p42 ()
+  (let ((count 0))
+	(dolist (result (mapcar #'calc-word-value *p42-words*))
+	 (when (in result *triangle-numbers*)
+	   (incf count)))
+	count))

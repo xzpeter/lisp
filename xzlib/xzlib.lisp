@@ -18,7 +18,7 @@
 	  (t (loop for start from 0 upto (- big small)
 			when (string= (subseq string start (+ start small)) sub)
 			return start)))))
-(defun split (string delimiter)
+(defun split (string &optional (delimiter ""))
   "Split the `string' into list using the `delimiter'"
   (if (string= delimiter "")
 	  (coerce string 'list)
@@ -33,6 +33,9 @@
 					(cut index)
 					(setf string (subseq string (length delimiter)))))
 			  (when (string= string "") (return (nreverse result)))))))
+(defun mkstr (&rest args)
+  (with-output-to-string (s)
+	(dolist (var args) (princ var s))))
 
 ;;; 
 ;;; sequences
@@ -48,6 +51,13 @@
 		((= step 0) (error "step cannot be zero"))
 		(t (loop for i from start below end by step
 			  collect i))))
+(defun in (element array)
+  (find-if #'(lambda (x) (equal x element)) array))
+;;; ((1) 2 (3 4 (5))) => (1 2 3 4 5)
+(defun flattern (lst)
+  (cond ((null lst) nil)
+		((atom lst) (list lst))
+		(t (nconc (flattern2 (car lst)) (flattern2 (cdr lst))))))
 
 ;;; 
 ;;; dates
@@ -64,20 +74,38 @@
 ;;;
 ;;; math
 ;;;
-(defmacro loop-prime-numbers (var limit &body body)
+(defmacro loop-prime-numbers (var &body body)
   "loop over prime numbers which are smaller than limit"
-  (let ((limit-name (gensym))
-		(primes (gensym))
+  (let ((primes (gensym))
 		(is-prime (gensym)))
-	`(let ((,primes nil)
-		   (,limit-name ,limit))
+	`(let ((,primes nil))
 	   (flet ((,is-prime (x)
 				(dolist (v ,primes t)
 				  (when (= (mod x v) 0)
 					(return nil)))) ) 
-		 (loop for ,var from 2 below ,limit-name
+		 (loop for ,var from 2
 			do (when (or (= ,var 2)
 						 (and (not (= (mod ,var 2) 0))
 							  (,is-prime ,var)))
 				 (setf ,primes (cons ,var ,primes))
 				 ,@body))))))
+(defmacro loop-fibonacci-numbers (var &body body)
+  "Loop over all the fibonacci numbers with limit"
+  `(loop with ,var = 1 and big = 1
+	  do (progn
+		   ,@body
+		   (shiftf ,var big (+ ,var big)))))
+
+
+;;;
+;;; misc
+;;;
+(defun make-cache-function (func)
+  "This function will renew a function works just the same as `func' but
+will do cache for same args. "
+  (let ((cache (make-hash-table :test #'equal)))
+	#'(lambda (&rest args)
+		(multiple-value-bind (val cached) (gethash args cache)
+		  (if cached
+			  val
+			  (setf (gethash args cache) (apply func args)))))))
